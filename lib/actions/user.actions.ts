@@ -9,6 +9,13 @@ import { CountryCode, ProcessorTokenCreateRequest, ProcessorTokenCreateRequestPr
 import { plaidClient } from '@/lib/plaid';
 import { revalidatePath } from "next/cache";
 import { addFundingSource, createDwollaCustomer } from "./dwolla.actions";
+import {
+  createTestToken,
+  getTestSessionCookieName,
+  TEST_SESSION_TTL_SECONDS,
+  TEST_USER,
+  verifyTestToken,
+} from "../test-auth";
 
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
@@ -50,6 +57,22 @@ export const signIn = async ({ email, password }: signInProps) => {
   } catch (error) {
     console.error('Error', error);
   }
+}
+
+export const testSignIn = async () => {
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_TEST_LOGIN !== "true") {
+    throw new Error("Test login is disabled in production");
+  }
+
+  cookies().set(getTestSessionCookieName(), createTestToken(), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: TEST_SESSION_TTL_SECONDS,
+  });
+
+  return parseStringify(TEST_USER);
 }
 
 export const signUp = async ({ password, ...userData }: SignUpParams) => {
@@ -106,6 +129,9 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
 }
 
 export async function getLoggedInUser() {
+  const testSession = cookies().get(getTestSessionCookieName());
+  if (verifyTestToken(testSession?.value)) return parseStringify(TEST_USER);
+
   try {
     const { account } = await createSessionClient();
     const result = await account.get();
@@ -121,6 +147,13 @@ export async function getLoggedInUser() {
 
 export const logoutAccount = async () => {
   try {
+    const testSession = cookies().get(getTestSessionCookieName());
+    if (testSession) {
+      cookies().delete(getTestSessionCookieName());
+      return true;
+    }
+
+    cookies().delete(getTestSessionCookieName());
     const { account } = await createSessionClient();
 
     cookies().delete('appwrite-session');

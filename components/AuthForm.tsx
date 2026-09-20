@@ -22,7 +22,7 @@ import CustomInput from './CustomInput';
 import { authFormSchema } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getLoggedInUser, signIn, signUp } from '@/lib/actions/user.actions';
+import { getLoggedInUser, signIn, signUp, testSignIn } from '@/lib/actions/user.actions';
 import PlaidLink from './PlaidLink';
 
 const AuthForm = ({ type }: { type: string }) => {
@@ -153,6 +153,25 @@ const AuthForm = ({ type }: { type: string }) => {
                   ) : type === 'sign-in' 
                     ? 'Sign In' : 'Sign Up'}
                 </Button>
+                {type === 'sign-in' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        await testSignIn();
+                        router.push('/');
+                        router.refresh();
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                  >
+                    Continue as test user
+                  </Button>
+                )}
               </div>
             </form>
           </Form>

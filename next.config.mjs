@@ -6,7 +6,16 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true
-  }
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        'localhost:3000',
+        'fantastic-engine-jj44wwj9g9jr3jppj-3000.app.github.dev',
+        '*.app.github.dev', // Allows all GitHub Codespaces tunnels
+      ],
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {
